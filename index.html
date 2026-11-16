@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atari Terror · Monitoring zmínek</title>
+<style>
+:root {
+  color-scheme: light;
+  --paper: #f5efdf;
+  --desk: #e6ddca;
+  --ink: #241d16;
+  --muted: #615244;
+  --rule: #9f907a;
+  --accent: #7d2825;
+  --serif: "Old Standard TT", Georgia, "Times New Roman", serif;
+  --headline: "Baskervville", Baskerville, Georgia, serif;
+  --sans: "Source Sans 3", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--desk); color: var(--ink); font: 16px/1.43 var(--serif); }
+main {
+  max-width: 1110px;
+  min-height: calc(100vh - 44px);
+  margin: 22px auto;
+  padding: 21px clamp(20px, 4.1vw, 58px) 42px;
+  background: radial-gradient(ellipse at 18% 0, #fbf6e9 0%, transparent 64%), var(--paper);
+  border: 1px solid #c2b49b;
+  box-shadow: 0 3px 18px #3c2c1a17;
+}
+h1, h2, h3, p { margin: 0; }
+header { border-top: 4px double var(--ink); border-bottom: 4px double var(--ink); text-align: center; }
+.brand { padding: 8px 0 3px; font: 700 clamp(2.65rem, 8vw, 5rem)/1.03 var(--headline); letter-spacing: -.045em; }
+header p { padding-bottom: 12px; color: var(--muted); font-size: .95rem; }
+.edition { margin-left: .45em; font: 750 .73rem/1.2 var(--sans); color: var(--accent); text-transform: uppercase; letter-spacing: .2em; }
+.utility { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 7px 0 0; }
+.actions, .platforms { display: flex; gap: 5px; flex-wrap: wrap; }
+button, select, input, textarea { font: inherit; color: inherit; background: #fff9eb; border: 1px solid var(--rule); border-radius: 0; padding: 6px 9px; }
+button { cursor: pointer; }
+button:hover, a:hover { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+a { color: inherit; text-underline-offset: 3px; }
+.utility button { font: 650 .72rem/1.2 var(--sans); padding: 4px 7px; background: transparent; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 29%); gap: 22px; margin-top: 14px; }
+aside { border-left: 1px solid var(--rule); padding-left: 22px; min-width: 0; }
+.muted, .meta { color: var(--muted); }
+.meta, .eyebrow { font: 700 .69rem/1.35 var(--sans); letter-spacing: .075em; text-transform: uppercase; }
+.eyebrow { color: var(--accent); }
+.platforms { padding: 0 0 9px; border-bottom: 1px solid var(--rule); margin-bottom: 9px; }
+.platforms button { background: transparent; font: 700 .76rem/1.2 var(--sans); padding: 5px 8px; }
+.platforms button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.search input { width: 100%; font: .86rem/1.3 var(--sans); }
+.search p { margin-top: 3px; font: .76rem/1.35 var(--sans); color: var(--muted); }
+#count { margin: 13px 0 4px; }
+.card { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-top: 1px solid var(--rule); }
+.card-body { min-width: 0; flex: 1; }
+.card-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 3px 10px; }
+.card h3 { margin: 3px 0; font: 700 clamp(1.05rem, 2.5vw, 1.3rem)/1.13 var(--headline); overflow-wrap: anywhere; }
+.card h3 a { text-decoration: none; }
+.card h3 a:hover { text-decoration: underline; }
+.card p { margin-bottom: 2px; font-size: .92rem; }
+.card .small { color: var(--muted); font-size: .79rem; font-style: italic; }
+.card img { order: 1; width: clamp(64px, 13vw, 104px); aspect-ratio: 16 / 11; object-fit: cover; flex: none; border: 1px solid var(--rule); filter: grayscale(1) sepia(.16) contrast(1.13); }
+.panel { border-top: 3px double var(--ink); padding-top: 8px; margin-bottom: 19px; }
+.panel h2 { margin-bottom: 5px; font: 700 1.2rem/1.18 var(--headline); }
+.panel p, .panel li { font-size: .87rem; }
+.panel ul { margin: 6px 0 0; padding-left: 16px; }
+.panel li + li { margin-top: 5px; }
+.panel .count { margin-top: 8px; }
+summary { cursor: pointer; font-weight: 700; }
+details { margin-top: 11px; padding-top: 7px; border-top: 1px solid var(--rule); }
+details .cards { margin-top: 8px; }
+form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+label { display: grid; gap: 4px; font-size: .88rem; min-width: 0; }
+.wide { grid-column: 1 / -1; }
+#notice { color: var(--accent); }
+.empty { padding: 8px 0 12px; }
+@media (max-width: 720px) {
+  main { min-height: 100vh; margin: 0; padding: 14px 15px 32px; border: 0; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  aside { border-left: 0; padding-left: 0; }
+}
+@media (max-width: 410px) { form { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1 class="brand">Atari Terror</h1>
+<p><span class="edition">Monitoring</span> · Přehled zmínek od 1. ledna 2026</p>
+</header>
+<div class="utility"><div id="notice" role="status"></div><div class="actions"><button id="import" type="button">Import JSON</button><button id="export" type="button">Export JSON</button><input id="file" type="file" accept=".json,application/json" hidden></div>
+</div>
+<div class="layout">
+<section aria-label="Přehled zmínek">
+<div id="platforms" class="platforms" role="group" aria-label="Filtrovat podle platformy"></div>
+<div class="search">
+<input id="query" type="search" placeholder="Hledat mezi uloženými zmínkami" aria-label="Hledat mezi uloženými zmínkami" aria-describedby="search-scope">
+<p id="search-scope">Filtruje uložené zmínky v přehledu podle názvu, autora nebo popisu.</p>
+</div>
+<p id="count" class="count meta" aria-live="polite"></p>
+<div id="feed" class="cards"></div>
+<details id="undated"><summary>Odkazy bez data publikace <span id="undatedCount"></span></summary><div id="context" class="cards"></div></details>
+<details class="editor"><summary>Přidat veřejný odkaz</summary>
+<form id="entry">
+<label class="wide">Název <input name="title" required maxlength="220"></label>
+<label class="wide">Odkaz na originál <input name="url" type="url" required></label>
+<label>Platforma <select name="platform" required></select></label>
+<label>Typ <select name="kind" required></select></label>
+<label>Zdroj / profil <input name="source" required maxlength="120"></label>
+<label>Autor / kdo sdílel <input name="author" maxlength="120"></label>
+<label>Datum publikace <input name="date" type="date" min="2026-01-01"></label>
+<label>Datum koncertu <input name="event" type="date" min="2026-01-01"></label>
+<label class="wide">Poznámka <textarea name="summary" rows="2" maxlength="450"></textarea></label>
+<button type="submit">Uložit zmínku</button>
+</form>
+</details>
+</section>
+<aside aria-label="Stav pokrytí">
+<div class="panel"><h2>Stav monitoringu</h2><p>Kontrola veřejných zdrojů za období 16. 5.–16. 11. 2026. Tato lokální stránka přijímá ruční záznamy a importované výsledky. Změny ukládá do tohoto prohlížeče.</p></div>
+<div class="panel"><h2>Pokrytí zdrojů</h2><ul>
+<li><strong>Web a média</strong> · indexované články, fotogalerie a weby pořadatelů.</li>
+<li><strong>YouTube</strong> · veřejná videa vyhledatelná podle názvu, popisu a kontextu.</li>
+<li><strong>Facebook a Instagram</strong> · omezený veřejný index. Pro více výsledků pomůžou označení kapely, profily klubů a ručně vložené odkazy.</li>
+<li><strong>TikTok</strong> · v prvním průzkumu byl přístup blokovaný.</li>
+</ul></div>
+<div class="panel"><h2>Hledat fanouškovské záběry</h2>
+<ul>
+<li><a href="https://www.youtube.com/results?search_query=Atari+Terror+2026" target="_blank" rel="noopener noreferrer">YouTube · Atari Terror 2026</a></li>
+<li><a href="https://www.youtube.com/results?search_query=Atari+Terror+SaSaZu" target="_blank" rel="noopener noreferrer">YouTube · SaSaZu</a></li>
+<li><a href="https://www.youtube.com/results?search_query=Atari+Terror+Shirimming+Jablonec" target="_blank" rel="noopener noreferrer">YouTube · Jablonec</a></li>
+<li><a href="https://www.youtube.com/results?search_query=Hentai+Corporation+Atari+Terror+%C4%8Cesk%C3%A9+Bud%C4%9Bjovice" target="_blank" rel="noopener noreferrer">YouTube · České Budějovice</a></li>
+<li><a href="https://www.instagram.com/atari_terror_oficialni/tagged/" target="_blank" rel="noopener noreferrer">Instagram · Označené příspěvky</a> · projdi také zmínky, Reels a profily klubů.</li>
+<li>Facebook · otevři diskuse akcí <a href="https://www.facebook.com/events/4371440943078171" target="_blank" rel="noopener noreferrer">SaSaZu</a>, <a href="https://www.facebook.com/events/916986561423071/" target="_blank" rel="noopener noreferrer">Jablonec</a> a <a href="https://www.facebook.com/events/860188456840327/" target="_blank" rel="noopener noreferrer">České Budějovice</a>.</li>
+</ul>
+<p class="count">Na Facebooku a Instagramu může být potřeba přihlášení. U nálezu zkopíruj odkaz na konkrétní příspěvek a přidej jej spolu s autorem a datem publikace.</p>
+</div>
+</aside>
+</div>
+</main>
+<script>
+const seed = [
+["2026-10-29","2026-11-07","Web","Článek","MarastMusic","Redakce","Listopadové koncerty 2026","Redakční tip na koncert Hentai Corporation a Atari Terror v jabloneckém klubu Stage.","https://www.marastmusic.com/clanky/listopadove-koncerty-2026"],
+["2026-10-27","","Web","Článek","Fakker","Jiří Vacek","Hentai Corporation vydávají singl Schimpanski, Part I","Zpráva o singlu a termínech Shirimming Tour uvádí zastávky s Atari Terror.","https://www.fakker.cz/clanek/17892/hentai-corporation-vydavaji-prvni-singl-z-nadchazejici-desky-shirime-schimpanski-part-i/"],
+["2026-10-08","","Web","Článek","Spark Rock Magazine","","Hentai Corporation oznamují desku a Shirimming Tour","Příspěvek označený jako PR uvádí šest zastávek s Atari Terror.","https://www.spark-rockmagazine.cz/hentai-corporation-oznamuji-novou-desku-a-vyrazeji-na-turne-k-jeji-podpore-zacina-ocista-a-groteskni-probuzeni-neuronalnich-siti"],
+["2026-10-06","2026-10-24","Web","Pozvánka","Rocksound","Petr Hanč","Clawfinger, Atari Terror a Sickret v Praze","Pozvánka na SaSaZu představuje kapely a uvádí podrobnosti o koncertě.","https://rocksound.cz/akce/clawfinger-atari-terror-sickret-praha/"],
+["2026-07-01","","Web","Článek","Bandzone","Atari Terror","Atari Terror oznamují návrat, novou desku a koncerty","Kapelní novinka oznamuje změnu kytaristy, spolupráci s Yardou Helešicem, vystoupení se Clawfinger a podzimní turné.","https://bandzone.cz/atariterror"],
+["","2026-10-24","Web","Pozvánka","SaSaZu","","Clawfinger v SaSaZu","Oficiální program klubu s časem vystoupení Atari Terror.","https://www.sasazu-club.com/akce/1c556705-1095-4712-b96d-a48a82b47e75"],
+["","2026-11-14","Web","Pozvánka","MC Fabrika","","Hentai Corporation a Atari Terror v MC Fabrika","Oficiální pozvánka českobudějovického klubu na zastávku Shirimming Tour.","https://www.mcfabrika.cz/akce/hentai-corporation-atari-terror"],
+["","2026-12-03","Web","Pozvánka","Go To Brno","","Hentai Corporation, Atari Terror a mmnk na Flédě","Brněnský kulturní přehled uvádí Atari Terror jako hosta plánovaného koncertu.","https://www.gotobrno.cz/akce/hentai-corporation-shirimming-tour-atari-terror-mmnk/"],
+["2026-11-15","2026-11-14","Web","Fotoreport","iREPORT","Linda Míková (foto)","Hentai Corporation a Atari Terror řádili v Budějovicích","Fotoreport z MC Fabrika na Shirimming Tour. Galerie má 57 fotek z koncertního večera. Zazněla i společná skladba No More Love.","https://www.ireport.cz/fotoreporty/hentai-corporation-a-atari-terror-radili-v-budejovicich-nad-hlavami-fanousku-letala-i-nafukovaci-panna"],
+["2026-10-24","2026-10-24","YouTube","Video","Troyx66","@Troyx66","Atari Terror - 2026 - Sasazu [ Czech republic - Prague ]","Fanouškovský záznam z koncertu v Praze (4:02).","https://www.youtube.com/watch?v=UGxisCZlqCw","https://i.ytimg.com/vi/UGxisCZlqCw/mqdefault.jpg"],
+["","2026-11-14","YouTube","Video","reportmag","@reportmag","Hentai Corporation & Atari Terror @ České Budějovice","Koncertní video. Dne 16. 11. 2026 uváděl YouTube zveřejnění před jedním dnem. Přesné datum nebylo zobrazené.","https://www.youtube.com/watch?v=aj80wP43HyY","https://i.ytimg.com/vi/aj80wP43HyY/mqdefault.jpg","2026-11-15"],
+["2026-11-06","2026-10-24","Web","Fotoreport","Rocksound","Petr Hanč","Rapmetal bez kompromisů v SaSaZu","Report z koncertu, nové skladby v setu a fotografie Atari Terror.","https://rocksound.cz/2026/11/06/rapmetal-bez-kompromisu-clawfinger-ovladli-prazsky-klub-sasazu/","https://rocksound.b-cdn.net/wp-content/uploads/2026/11/DSC_6105.jpg"],
+["2026-10-26","2026-10-24","Web","Fotoreport","MarastMusic","Bejv · foto Peter Bjöns a Tomáš Třeštík","Clawfinger, Atari Terror a Sickret","Report a fotky z pražského koncertu. Říjnový termín potvrzuje pořadatel.","https://www.marastmusic.com/clanky/clawfinger-atari-terror-sickret"],
+["2026-10-25","2026-10-24","Web","Fotoreport","iREPORT","Vojtěch Chludil (foto)","Clawfinger s Atari Terror a Sickret v Praze","Galerie s 57 snímky z celého koncertního večera.","https://www.ireport.cz/fotoreporty/clawfinger-rozsekali-prahu-s-atari-terror-a-sickret-radili-v-sasazu"],
+["2026-10-08","","Web","Článek","Fakker","Jiří Vacek","Hentai Corporation oznamují desku a turné","Oznámení Shirimming Tour zmiňuje Atari Terror mezi hosty.","https://www.fakker.cz/clanek/17841/zadkove-oko-te-vidi-hentai-corporation-oznamuji-novou-desku-a-vyrazeji-na-turne-k-jeji-podpore-zacina-ocista-a-groteskni-probuzeni-neuronalnich-siti/"],
+["2026-09-30","2026-10-24","Web","Článek","MarastMusic","Redakce","Říjnové koncerty 2026","Redakční výběr zmiňuje Atari Terror jako hosta Clawfinger.","https://www.marastmusic.com/clanky/rijnove-koncerty-2026"],
+["2026-09-12","2026-10-24","Web","Pozvánka","Vypadnout","","Pozvánka na Clawfinger v SaSaZu","V programu jsou Atari Terror a Sickret.","https://www.vypadnout.cz/praha/clawfinger-zamiri-do-sasazu-rap-metalovy-vecer-doplni-atari-terror-a-sickret/"],
+["","2026-10-24","Web","Fanouškovský příspěvek","setlist.fm","Ilcinek (poslední editace)","Setlist Atari Terror v SaSaZu","Komunitní soupis deseti skladeb. Doložena editace 26. 10. 2026.","https://www.setlist.fm/setlist/atari-terror/2026/sasazu-prague-prague-czechia-5b7c6f80.html"],
+["","2026-10-24","Web","Pozvánka","Obscure Promotion","","Clawfinger, Atari Terror a Sickret v SaSaZu","Oficiální program pořadatele.","https://obscure.cz/en/tickets/detail/id/999"],
+["","2026-10-24","Web","Pozvánka","ČT art / GoOut","","Clawfinger, Atari Terror a Sickret v kulturním přehledu","Program koncertu včetně časů vystoupení.","https://art.ceskatelevize.cz/kulturni-prehled/clawfinger-atari-terror-sickret/0DCbK"],
+["","2026-10-24","Web","Pozvánka","Atakt","","Clawfinger, Atari Terror a Sickret míří do SaSaZu","Klubová pozvánka s představením všech tří kapel.","https://www.atakt.cz/events/clawfinger-atari-terror-sickret-dorazi-do-prazskeho-sasazu/"],
+["","2026-11-14","Web","Pozvánka","Kam v Budějcích","","Hentai Corporation a Atari Terror v MC Fabrika","Kulturní tip na zastávku v Českých Budějovicích.","https://www.kamvbudejcich.cz/akce/hentai-corporation-atari-terror-dulmyyld"],
+["","2026-11-20","Web","Pozvánka","Pluhárna","","Shirimming Tour v Mladé Boleslavi","Pozvánka klubu na koncert s Atari Terror.","https://www.pluharna.cz/udalosti/hentai-corporation-shirimming-tour-host-atari-terror-184"],
+["","2026-11-27","Web","Pozvánka","ČT art / GoOut","","Shirimming Tour v Divadle pod Lampou","Kulturní přehled s Atari Terror jako hostem.","https://art.ceskatelevize.cz/kulturni-prehled/hentai-corporation-shirimming-tour-host-atari-terror/0E3Qf"],
+["","2026-12-03","Web","Pozvánka","Ticketportal","","Shirimming Tour na Flédě","Brněnská zastávka s Atari Terror a mmnk.","https://www.ticketportal.cz/event/Hentai-Corporation-Shirimming-Tour-hoste-Atari-Terror-mmnk"],
+["","2026-11-07","Web","Pozvánka","Bandzone","","Shirimming Tour v Klubu Stage","Jablonecká zastávka a odkaz na facebookovou událost.","https://bandzone.cz/koncert/561929-jablonec-nad-nisou-klub-stage-hentai-corporation-shirimming-tour-2026-atari-terror-jablonec-nad-nisou"],
+["","2026-12-04","Web","Pozvánka","Klub Tyjátr","","Shirimming Tour ve Svitavách","Pozvánka klubu na koncert s Atari Terror.","https://tyjatrklub.cz/akce/hentai-corporation-shirimming-tour-host-atari-terror/2537"],
+["","2026-10-24","Facebook","Pozvánka","Facebook","","Událost Clawfinger v SaSaZu","Odkaz z MarastMusic. Obsah události a příspěvky v diskusi nebyly ověřitelné.","https://www.facebook.com/events/4371440943078171"],
+["","2026-11-07","Facebook","Pozvánka","Facebook","","Událost Shirimming Tour v Jablonci","Odkaz z Bandzone. Obsah události a příspěvky v diskusi nebyly ověřitelné.","https://www.facebook.com/events/916986561423071/"],
+["","2026-11-14","Facebook","Pozvánka","Facebook","","Událost Shirimming Tour v Českých Budějovicích","Odkaz z Bandzone. Obsah události a příspěvky v diskusi nebyly ověřitelné.","https://www.facebook.com/events/860188456840327/"],
+["","","Web","Pozvánka","Hentai Corporation","","Shirimming Tour 2026","Stránka turné s termíny a hostujícími kapelami.","https://hentaicorp.cz/"],
+["","","Web","Profil","Darkzin","","Profil Atari Terror na Darkzin","Profil uvádí stav k 11. 7. 2026 a několik zastávek turné.","https://www.darkzin.cz/shlednute-kapely/atari-teror/"]
+].map(([date,event,platform,kind,source,author,title,summary,url,image,estimatedDate])=>({date,event,platform,kind,source,author,title,summary,url,image,estimatedDate}));
+const platforms = ["Web", "YouTube", "Facebook", "Instagram", "TikTok"];
+const kinds = ["Článek", "Fotoreport", "Fotka", "Video", "Pozvánka", "Fanouškovský příspěvek", "Sdílení", "Profil"];
+const key = "atari-monitor-v1";
+const byId = id => document.getElementById(id);
+const form = byId("entry");
+let additions = [];
+try { additions = JSON.parse(localStorage.getItem(key) || "[]").map(validate); } catch { byId("notice").textContent = "Uložené záznamy se nepodařilo načíst."; }
+let activePlatform = "";
+for (const value of ["", ...platforms]) {
+  const button = node("button",value || "Vše");
+  button.type = "button";
+  button.setAttribute("aria-pressed",String(value === activePlatform));
+  button.addEventListener("click",()=>{
+    activePlatform = value;
+    for (const filter of byId("platforms").children) {
+      filter.setAttribute("aria-pressed",String(filter === button));
+    }
+    byId("undated").open = Boolean(value);
+    render();
+  });
+  byId("platforms").append(button);
+}
+for (const value of platforms) form.elements.platform.add(new Option(value));
+for (const value of kinds) form.elements.kind.add(new Option(value));
+function safeUrl(value) {
+  const url = new URL(value);
+  if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) throw Error("Odkaz musí začínat https:// nebo http://.");
+  return url;
+}
+function identity(value) {
+  const url = safeUrl(value);
+  url.hash = "";
+  for (const k of [...url.searchParams.keys()]) {
+    if (/^(utm_.+|fbclid|gclid)$/i.test(k)) url.searchParams.delete(k);
+  }
+  url.searchParams.sort();
+  return url.hostname.replace(/^www\./,"") + url.pathname.replace(/\/$/,"") + url.search;
+}
+function validate(x) {
+  if (!x || typeof x !== "object") throw Error("Každá zmínka musí být objekt.");
+  const item = {};
+  for (const field of ["date","event","estimatedDate","platform","kind","source","author","title","summary","url","image"]) {
+    if (x[field] != null && typeof x[field] !== "string") throw Error("Pole " + field + " musí obsahovat text.");
+    item[field] = (x[field] || "").trim();
+  }
+  if (!item.title || !item.source || !platforms.includes(item.platform) || !kinds.includes(item.kind)) throw Error("Chybí název, zdroj, podporovaná platforma nebo typ.");
+  for (const value of [item.date,item.event,item.estimatedDate].filter(Boolean)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value < "2026-01-01" || Number.isNaN(Date.parse(value)) || new Date(value).toISOString().slice(0,10) !== value) throw Error("Použij platné datum od 1. 1. 2026 ve formátu RRRR-MM-DD.");
+  }
+  item.url = safeUrl(item.url).href;
+  if (item.image) item.image = safeUrl(item.image).href;
+  return item;
+}
+function merge(items) {
+  const merged = new Map();
+  for (const item of items) {
+    const id = identity(item.url);
+    const previous = merged.get(id);
+    merged.set(id, {...item, image: item.image || previous?.image,
+      estimatedDate: item.estimatedDate || previous?.estimatedDate});
+  }
+  return [...merged.values()];
+}
+function all() { return merge([...seed,...additions]); }
+function save(items) {
+  const next = merge([...additions,...items]);
+  localStorage.setItem(key,JSON.stringify(next));
+  additions = next;
+  render();
+}
+function node(tag, content, className) {
+  const element = document.createElement(tag);
+  if (content) element.textContent = content;
+  if (className) element.className = className;
+  return element;
+}
+const dateLabel = value => new Intl.DateTimeFormat("cs-CZ",{timeZone:"UTC",dateStyle:"medium"}).format(new Date(value));
+function card(item) {
+  const article = node("article",null,"card");
+  if (item.image) {
+    const image = node("img");
+    image.src = item.image;
+    image.alt = item.title + " · " + (item.author || item.source);
+    image.loading = "lazy";
+    image.addEventListener("error",()=>image.remove());
+    article.append(image);
+  }
+  const content = node("div",null,"card-body");
+  const head = node("div",null,"card-head");
+  const publication = item.date ? dateLabel(item.date) :
+    item.estimatedDate ? "Přibližně " + dateLabel(item.estimatedDate) : "Datum vydání neznámé";
+  head.append(node("span",item.platform + " / " + item.kind,"eyebrow"),node("span",publication,"meta"));
+  const a = node("a",item.title);
+  a.href = item.url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  const title = node("h3");
+  title.append(a);
+  content.append(head,title,node("p",[item.source,item.author].filter(Boolean).join(" · "),"small"));
+  if (item.summary) content.append(node("p",item.summary));
+  if (item.event) content.append(node("span","Koncert " + dateLabel(item.event),"meta"));
+  article.append(content);
+  return article;
+}
+function normalize(value) {
+  return value.normalize("NFD").replace(/\p{Diacritic}/gu,"").toLowerCase();
+}
+function render() {
+  const query = normalize(byId("query").value.trim());
+  const compact = value => value.replace(/[^a-z0-9]/g,"");
+  const compactQuery = compact(query);
+  const items = all().filter(item => {
+    if (activePlatform && activePlatform !== item.platform) return false;
+    const haystack = normalize([item.title,item.source,item.author,item.summary,item.platform,item.kind].join(" "));
+    return haystack.includes(query) || (compactQuery && compact(haystack).includes(compactQuery));
+  });
+  const publication = item => item.date || item.estimatedDate || "";
+  const dated = items.filter(publication).sort((a,b)=>publication(b).localeCompare(publication(a)));
+  const undated = items.filter(item=>!publication(item));
+  byId("count").textContent = "Výsledky (" + items.length + ") · od nejnovějších";
+  byId("feed").replaceChildren(...dated.map(card));
+  if (!items.length) byId("feed").append(node("p","Pro tento filtr tu zatím nejsou žádné zmínky.","empty muted"));
+  byId("context").replaceChildren(...undated.map(card));
+  byId("undatedCount").textContent = "(" + undated.length + ")";
+  byId("undated").hidden = !undated.length;
+  if (!dated.length && undated.length) byId("undated").open = true;
+}
+byId("query").addEventListener("input",render);
+form.addEventListener("submit",event=>{
+  event.preventDefault();
+  try {
+    save([validate(Object.fromEntries(new FormData(form)))]);
+    form.reset();
+    byId("notice").textContent = "Zmínka uložena. Při shodném odkazu se aktualizoval původní záznam.";
+  } catch(e) { byId("notice").textContent = e.message; }
+});
+byId("import").addEventListener("click",()=>byId("file").click());
+byId("file").addEventListener("change",async event=>{
+  const input = event.target;
+  try {
+    const data = JSON.parse(await input.files[0].text());
+    const items = Array.isArray(data) ? data : data.items;
+    if (!Array.isArray(items)) throw Error("JSON musí obsahovat pole záznamů v položce items.");
+    save(items.map(validate));
+    byId("notice").textContent = "Import dokončen. Shodné odkazy byly sloučeny.";
+  } catch(e) { byId("notice").textContent = "Import se nezdařil. " + e.message; }
+  input.value = "";
+});
+byId("export").addEventListener("click",()=>{
+  const url = URL.createObjectURL(new Blob([JSON.stringify({items:all()},null,2)],{type:"application/json"}));
+  const a = node("a");
+  a.href = url;
+  a.download = "atari-terror-zminky.json";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+render();
+</script>
+</body>
+</html>
