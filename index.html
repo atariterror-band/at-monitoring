@@ -34,14 +34,12 @@ header { border-top: 4px double var(--ink); border-bottom: 4px double var(--ink)
 .brand { padding: 8px 0 3px; font: 700 clamp(2.65rem, 8vw, 5rem)/1.03 var(--headline); letter-spacing: -.045em; }
 header p { padding-bottom: 12px; color: var(--muted); font-size: .95rem; }
 .edition { margin-left: .45em; font: 750 .73rem/1.2 var(--sans); color: var(--accent); text-transform: uppercase; letter-spacing: .2em; }
-.utility { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 7px 0 0; }
-.actions, .platforms { display: flex; gap: 5px; flex-wrap: wrap; }
+.platforms { display: flex; gap: 5px; flex-wrap: wrap; }
 button, select, input, textarea { font: inherit; color: inherit; background: #fff9eb; border: 1px solid var(--rule); border-radius: 0; padding: 6px 9px; }
 button { cursor: pointer; }
 button:hover, a:hover { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 a { color: inherit; text-underline-offset: 3px; }
-.utility button { font: 650 .72rem/1.2 var(--sans); padding: 4px 7px; background: transparent; }
 .layout { margin-top: 14px; }
 .muted, .meta { color: var(--muted); }
 .meta, .eyebrow { font: 700 .69rem/1.35 var(--sans); letter-spacing: .075em; text-transform: uppercase; }
@@ -73,6 +71,12 @@ label { display: grid; gap: 4px; font-size: .88rem; min-width: 0; }
   main { min-height: 100vh; margin: 0; padding: 14px 15px 32px; border: 0; }
 }
 @media (max-width: 410px) { form { grid-template-columns: 1fr; } }
+.timeline { --date-width: clamp(3.1rem, 10vw, 4.6rem); --date-gap: clamp(.55rem, 2vw, 1rem); }
+.timeline-month { margin: 14px 0 0; padding: 5px 0; border-top: 3px double var(--rule); color: var(--accent); font: 700 1rem/1.2 var(--headline); }
+.timeline-row { display: grid; grid-template-columns: var(--date-width) minmax(0, 1fr); gap: var(--date-gap); }
+.timeline-date { position: relative; border-right: 1px solid var(--rule); padding: 11px 7px 0 0; color: var(--accent); font: 700 clamp(.7rem, 2.7vw, .9rem)/1.3 var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.timeline-date::after { content: ""; position: absolute; top: 15px; right: -4px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.timeline-date.estimated::after { background: var(--paper); border: 1px solid var(--accent); }
 </style>
 </head>
 <body>
@@ -81,8 +85,6 @@ label { display: grid; gap: 4px; font-size: .88rem; min-width: 0; }
 <h1 class="brand">Atari Terror</h1>
 <p><span class="edition">Monitoring</span> · Poslední vyhledávání <time id="last-search" datetime="2026-11-17">17. 11. 2026</time></p>
 </header>
-<div class="utility"><div id="notice" role="status"></div><div class="actions"><button id="import" type="button">Import JSON</button><button id="export" type="button">Export JSON</button><input id="file" type="file" accept=".json,application/json" hidden></div>
-</div>
 <div class="layout">
 <section aria-label="Přehled zmínek">
 <div id="platforms" class="platforms" role="group" aria-label="Filtrovat podle platformy"></div>
@@ -91,7 +93,7 @@ label { display: grid; gap: 4px; font-size: .88rem; min-width: 0; }
 <p id="search-scope">Filtruje uložené zmínky v přehledu podle názvu, autora nebo popisu.</p>
 </div>
 <p id="count" class="count meta" aria-live="polite"></p>
-<div id="feed" class="cards"></div>
+<div id="feed" class="timeline"></div>
 <details id="undated"><summary>Odkazy bez data publikace <span id="undatedCount"></span></summary><div id="context" class="cards"></div></details>
 <details class="editor"><summary>Přidat veřejný odkaz</summary>
 <form id="entry">
@@ -105,6 +107,7 @@ label { display: grid; gap: 4px; font-size: .88rem; min-width: 0; }
 <label>Datum koncertu <input name="event" type="date" min="2026-01-01"></label>
 <label class="wide">Poznámka <textarea name="summary" rows="2" maxlength="450"></textarea></label>
 <button type="submit">Uložit zmínku</button>
+<div id="notice" class="wide" role="status"></div>
 </form>
 </details>
 </section>
@@ -222,7 +225,7 @@ function node(tag, content, className) {
   return element;
 }
 const dateLabel = value => new Intl.DateTimeFormat("cs-CZ",{timeZone:"UTC",dateStyle:"medium"}).format(new Date(value));
-function card(item) {
+function card(item, showPublication = true) {
   const article = node("article",null,"card");
   if (item.image) {
     const image = node("img");
@@ -236,7 +239,8 @@ function card(item) {
   const head = node("div",null,"card-head");
   const publication = item.date ? dateLabel(item.date) :
     item.estimatedDate ? "Přibližně " + dateLabel(item.estimatedDate) : "Datum vydání neznámé";
-  head.append(node("span",item.platform + " / " + item.kind,"eyebrow"),node("span",publication,"meta"));
+  head.append(node("span",item.platform + " / " + item.kind,"eyebrow"));
+  if (showPublication) head.append(node("span",publication,"meta"));
   const a = node("a",item.title);
   a.href = item.url;
   a.target = "_blank";
@@ -265,9 +269,33 @@ function render() {
   const dated = items.filter(publication).sort((a,b)=>publication(b).localeCompare(publication(a)));
   const undated = items.filter(item=>!publication(item));
   byId("count").textContent = "Výsledky (" + items.length + ") · od nejnovějších";
-  byId("feed").replaceChildren(...dated.map(card));
+  const timeline = document.createDocumentFragment();
+  const monthLabel = new Intl.DateTimeFormat("cs-CZ", {month:"long",year:"numeric",timeZone:"UTC"});
+  const dayLabel = new Intl.DateTimeFormat("cs-CZ", {day:"numeric",month:"numeric",timeZone:"UTC"});
+  let currentMonth = "";
+  for (const item of dated) {
+    const value = publication(item);
+    const date = new Date(value);
+    const month = value.slice(0, 7);
+    if (month !== currentMonth) {
+      timeline.append(node("h2",monthLabel.format(date),"timeline-month"));
+      currentMonth = month;
+    }
+    const dateText = dayLabel.format(date).replace(/\s/g,"");
+    const time = node("time",(item.date ? "" : "≈") + dateText,"timeline-date");
+    time.dateTime = value;
+    time.setAttribute("aria-label",(item.date ? "" : "Přibližně ") + dateLabel(value));
+    if (!item.date) {
+      time.classList.add("estimated");
+      time.title = "Přibližné datum publikace";
+    }
+    const row = node("div",null,"timeline-row");
+    row.append(time,card(item,false));
+    timeline.append(row);
+  }
+  byId("feed").replaceChildren(timeline);
   if (!items.length) byId("feed").append(node("p","Pro tento filtr tu zatím nejsou žádné zmínky.","empty muted"));
-  byId("context").replaceChildren(...undated.map(card));
+  byId("context").replaceChildren(...undated.map(item => card(item)));
   byId("undatedCount").textContent = "(" + undated.length + ")";
   byId("undated").hidden = !undated.length;
   if (!dated.length && undated.length) byId("undated").open = true;
@@ -280,26 +308,6 @@ form.addEventListener("submit",event=>{
     form.reset();
     byId("notice").textContent = "Zmínka uložena. Při shodném odkazu se aktualizoval původní záznam.";
   } catch(e) { byId("notice").textContent = e.message; }
-});
-byId("import").addEventListener("click",()=>byId("file").click());
-byId("file").addEventListener("change",async event=>{
-  const input = event.target;
-  try {
-    const data = JSON.parse(await input.files[0].text());
-    const items = Array.isArray(data) ? data : data.items;
-    if (!Array.isArray(items)) throw Error("JSON musí obsahovat pole záznamů v položce items.");
-    save(items.map(validate));
-    byId("notice").textContent = "Import dokončen. Shodné odkazy byly sloučeny.";
-  } catch(e) { byId("notice").textContent = "Import se nezdařil. " + e.message; }
-  input.value = "";
-});
-byId("export").addEventListener("click",()=>{
-  const url = URL.createObjectURL(new Blob([JSON.stringify({items:all()},null,2)],{type:"application/json"}));
-  const a = node("a");
-  a.href = url;
-  a.download = "atari-terror-zminky.json";
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 render();
 </script>
