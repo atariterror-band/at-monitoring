@@ -42,8 +42,7 @@ button:hover, a:hover { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 a { color: inherit; text-underline-offset: 3px; }
 .utility button { font: 650 .72rem/1.2 var(--sans); padding: 4px 7px; background: transparent; }
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 29%); gap: 22px; margin-top: 14px; }
-aside { border-left: 1px solid var(--rule); padding-left: 22px; min-width: 0; }
+.layout { margin-top: 14px; }
 .muted, .meta { color: var(--muted); }
 .meta, .eyebrow { font: 700 .69rem/1.35 var(--sans); letter-spacing: .075em; text-transform: uppercase; }
 .eyebrow { color: var(--accent); }
@@ -62,12 +61,6 @@ aside { border-left: 1px solid var(--rule); padding-left: 22px; min-width: 0; }
 .card p { margin-bottom: 2px; font-size: .92rem; }
 .card .small { color: var(--muted); font-size: .79rem; font-style: italic; }
 .card img { order: 1; width: clamp(64px, 13vw, 104px); aspect-ratio: 16 / 11; object-fit: cover; flex: none; border: 1px solid var(--rule); filter: grayscale(1) sepia(.16) contrast(1.13); }
-.panel { border-top: 3px double var(--ink); padding-top: 8px; margin-bottom: 19px; }
-.panel h2 { margin-bottom: 5px; font: 700 1.2rem/1.18 var(--headline); }
-.panel p, .panel li { font-size: .87rem; }
-.panel ul { margin: 6px 0 0; padding-left: 16px; }
-.panel li + li { margin-top: 5px; }
-.panel .count { margin-top: 8px; }
 summary { cursor: pointer; font-weight: 700; }
 details { margin-top: 11px; padding-top: 7px; border-top: 1px solid var(--rule); }
 details .cards { margin-top: 8px; }
@@ -78,8 +71,6 @@ label { display: grid; gap: 4px; font-size: .88rem; min-width: 0; }
 .empty { padding: 8px 0 12px; }
 @media (max-width: 720px) {
   main { min-height: 100vh; margin: 0; padding: 14px 15px 32px; border: 0; }
-  .layout { grid-template-columns: minmax(0, 1fr); }
-  aside { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 410px) { form { grid-template-columns: 1fr; } }
 </style>
@@ -117,26 +108,6 @@ label { display: grid; gap: 4px; font-size: .88rem; min-width: 0; }
 </form>
 </details>
 </section>
-<aside aria-label="Stav pokrytí">
-<div class="panel"><h2>Stav monitoringu</h2><p>Kontrola veřejných zdrojů za období 16. 5.–16. 11. 2026. Tato lokální stránka přijímá ruční záznamy a importované výsledky. Změny ukládá do tohoto prohlížeče.</p></div>
-<div class="panel"><h2>Pokrytí zdrojů</h2><ul>
-<li><strong>Web a média</strong> · indexované články, fotogalerie a weby pořadatelů.</li>
-<li><strong>YouTube</strong> · veřejná videa vyhledatelná podle názvu, popisu a kontextu.</li>
-<li><strong>Facebook a Instagram</strong> · omezený veřejný index. Pro více výsledků pomůžou označení kapely, profily klubů a ručně vložené odkazy.</li>
-<li><strong>TikTok</strong> · v prvním průzkumu byl přístup blokovaný.</li>
-</ul></div>
-<div class="panel"><h2>Hledat fanouškovské záběry</h2>
-<ul>
-<li><a href="https://www.youtube.com/results?search_query=Atari+Terror+2026" target="_blank" rel="noopener noreferrer">YouTube · Atari Terror 2026</a></li>
-<li><a href="https://www.youtube.com/results?search_query=Atari+Terror+SaSaZu" target="_blank" rel="noopener noreferrer">YouTube · SaSaZu</a></li>
-<li><a href="https://www.youtube.com/results?search_query=Atari+Terror+Shirimming+Jablonec" target="_blank" rel="noopener noreferrer">YouTube · Jablonec</a></li>
-<li><a href="https://www.youtube.com/results?search_query=Hentai+Corporation+Atari+Terror+%C4%8Cesk%C3%A9+Bud%C4%9Bjovice" target="_blank" rel="noopener noreferrer">YouTube · České Budějovice</a></li>
-<li><a href="https://www.instagram.com/atari_terror_oficialni/tagged/" target="_blank" rel="noopener noreferrer">Instagram · Označené příspěvky</a> · projdi také zmínky, Reels a profily klubů.</li>
-<li>Facebook · otevři diskuse akcí <a href="https://www.facebook.com/events/4371440943078171" target="_blank" rel="noopener noreferrer">SaSaZu</a>, <a href="https://www.facebook.com/events/916986561423071/" target="_blank" rel="noopener noreferrer">Jablonec</a> a <a href="https://www.facebook.com/events/860188456840327/" target="_blank" rel="noopener noreferrer">České Budějovice</a>.</li>
-</ul>
-<p class="count">Na Facebooku a Instagramu může být potřeba přihlášení. U nálezu zkopíruj odkaz na konkrétní příspěvek a přidej jej spolu s autorem a datem publikace.</p>
-</div>
-</aside>
 </div>
 </main>
 <script>
